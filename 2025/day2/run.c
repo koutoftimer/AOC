@@ -12,7 +12,8 @@ long invalid(long part, int chunks);
 int
 cmp(const void *a, const void *b)
 {
-        return *(long *)a - *(long *)b;
+        long res = *(long *)a - *(long *)b;
+        return res > 0 ? 1 : (res < 0 ? -1 : 0);
 }
 
 int
@@ -29,7 +30,8 @@ main(int argc, char *argv[])
         while (fscanf(f, "%ld-%ld,", &from, &to) != EOF) {
                 char number[40] = {20};
                 sprintf(number, "%ld", from);
-                int len = strlen(number);
+                // SAFETY: no ulong can overflow the int size
+                int len = (int)strlen(number);
                 for (int chunk_len = 1; chunk_len <= (len + 1) / 2;
                      ++chunk_len) {
                         long low_part = normalized_part(from, chunk_len);
@@ -43,7 +45,8 @@ main(int argc, char *argv[])
                 }
 
                 sprintf(number, "%ld", to);
-                len = strlen(number);
+                // SAFETY: no ulong can overflow the int size
+                len = (int)strlen(number);
                 for (int chunk_len = 1; chunk_len <= (len + 1) / 2;
                      ++chunk_len) {
                         long high_part = normalized_part(to, chunk_len);
@@ -58,7 +61,9 @@ main(int argc, char *argv[])
                 }
         }
 
-        qsort(values, values_size, sizeof(*values), cmp);
+        // SAFETY: values_size will not overflow
+        assert(values_size > 0);
+        qsort(values, (uint)values_size, sizeof(*values), cmp);
         int j = 0;
         for (int i = 1; i < values_size; ++i) {
                 if (values[i] != values[j]) ++j;
@@ -85,11 +90,13 @@ invalid(long part, int chunks)
         sprintf(buf, "%ld", part);
         assert(atol(buf) == part);
 
-        int len = strlen(buf);
+        // SAFETY: buf will never be so long to overflow
+        int len = (int)strlen(buf);
         for (int i = len; i < len * chunks; ++i) {
                 buf[i] = buf[i - len];
         }
-        assert(strlen(buf) == chunks * len);
+        // SAFETY: buf will never be so long to overflow
+        assert((int)strlen(buf) == chunks * len);
 
         return atol(buf);
 }
@@ -101,7 +108,8 @@ normalized_part(long number, int chunk_len)
 
         char buf[40] = {0};
         sprintf(buf, "%ld", number);
-        int len = strlen(buf);
+        // SAFETY: buf will never be so long to overflow
+        int len = (int)strlen(buf);
 
         if (len % chunk_len == 0) {
                 buf[chunk_len] = 0;
@@ -111,7 +119,8 @@ normalized_part(long number, int chunk_len)
                 buf[chunk_len] = 0;
         }
 
-        assert(strlen(buf) == chunk_len);
+        // SAFETY: buf will never be so long to overflow
+        assert((int)strlen(buf) == chunk_len);
 
         return atol(buf);
 }
