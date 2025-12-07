@@ -1,3 +1,6 @@
+# Usage: sh path/to/build.sh [path/to/solution.c] && ./a.out <path/to/test>
+
+
 FLAGS=(-std=gnu23)
 # turn on debug build
 FLAGS=(-ggdb3)
@@ -8,4 +11,10 @@ FLAGS+=(-Wall -Wextra -pedantic)
 # make all warnings errros
 FLAGS+=(-Werror)
 
-gcc -I.. ${FLAGS[@]} run.c
+solution="$1"
+if [[ "$solution" == "" ]]
+then
+  solution="run.c"
+fi
+
+gcc -I.. ${FLAGS[@]} "$solution"

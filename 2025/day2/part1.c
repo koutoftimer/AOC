@@ -41,9 +41,12 @@ invalid(long half)
         sprintf(buf, "%ld", half);
         assert(atol(buf) == half);
 
-        int len = strlen(buf);
-        memcpy(buf + len, buf, len);
-        assert(strlen(buf) == 2 * len);
+        // SAFETY: len of buf will not exced int
+        int len = (int)strlen(buf);
+        // SAFETY: strlen returns posivite values
+        memcpy(buf + len, buf, (ulong)len);
+        // SAFETY: len of buf will not exced int
+        assert((int)strlen(buf) == 2 * len);
 
         return atol(buf);
 }
@@ -53,7 +56,8 @@ normalized_half(long number)
 {
         char buf[20] = {0};
         sprintf(buf, "%ld", number);
-        int len = strlen(buf);
+        // SAFETY: ulong `number` can't overflow int size
+        int len = (int)strlen(buf);
         if (len & 1) {
                 buf[0] = '1';
                 for (int i = 1; i <= len / 2; ++i) buf[i] = '0';
