@@ -8,4 +8,4 @@ FLAGS+=(-Wall -Wextra -pedantic)
 # make all warnings errros
 FLAGS+=(-Werror)
 
-gcc ${FLAGS[@]} run.c
+gcc -I.. ${FLAGS[@]} run.c
