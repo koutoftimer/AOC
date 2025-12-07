@@ -7,7 +7,7 @@
 
 static_assert(sizeof(long) == 8);
 
-int
+char
 first_max_element(char *line, int from, int to)
 {
         char max = line[from];
@@ -18,7 +18,8 @@ first_max_element(char *line, int from, int to)
                         ret = i;
                 }
         }
-        return ret;
+        // SAFETY: line is never > 127 bytes
+        return (char)ret;
 }
 
 int
@@ -31,13 +32,15 @@ main(int argc, char *argv[])
         char line[200] = {0};
         long sum       = 0;
         while (fscanf(f, "%s", line) != EOF) {
-                int len      = strlen(line);
+                // SAFETY: line is never > 127 bytes long
+                int len      = (int)strlen(line);
                 char max[13] = {first_max_element(line, 0, len - 12)};
                 for (int i = 1; i < 12; ++i) {
                         max[i] = first_max_element(line, max[i - 1] + 1,
                                                    len - 12 + i);
                 }
-                for (int i = 0; i < 12; ++i) max[i] = line[max[i]];
+                // SAFETY: we don't have lines > 127 bytes long
+                for (int i = 0; i < 12; ++i) max[i] = line[(int)max[i]];
                 sum += atol(max);
         }
 

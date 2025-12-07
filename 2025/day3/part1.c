@@ -16,7 +16,8 @@ main(int argc, char *argv[])
         char line[200] = {0};
         long sum       = 0;
         while (fscanf(f, "%s", line) != EOF) {
-                int len       = strlen(line);
+                // SAFETY: line is never > 127 bytes long
+                int len       = (int)strlen(line);
                 long tail_max = line[len - 1];
                 long max      = INT64_MIN;
                 for (int i = len - 2; i >= 0; --i) {
