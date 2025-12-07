@@ -1,5 +1,8 @@
 #pragma once
 
+#include <stdio.h>
+#include <stdlib.h>
+
 static_assert(sizeof(long) == 8);
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -15,11 +18,15 @@ static_assert(sizeof(long) == 8);
                 }                                                          \
                 if (array.size + 1 > array.capacity) {                     \
                         array.capacity *= 2;                               \
-                        typeof(array.items) items =                        \
-                            malloc(sizeof(*array.items) * array.capacity); \
-                        memcpy(items, array.items,                         \
-                               array.size * sizeof(*array.items));         \
-                        array.items = items;                               \
+                        array.items =                                      \
+                            reallocarray(array.items, array.capacity,      \
+                                         sizeof(*array.items));            \
                 }                                                          \
                 array.items[array.size++] = value;                         \
+        } while (0)
+
+#define panic(message)                              \
+        do {                                        \
+                fprintf(stderr, "%s\n", (message)); \
+                exit(1);                            \
         } while (0)
