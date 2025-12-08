@@ -69,3 +69,10 @@ static_assert(sizeof(uint) == 4);
                 fprintf(stderr, "%s\n", (message)); \
                 exit(1);                            \
         } while (0)
+
+#define swap(a, b)                                 \
+        do {                                       \
+                typeof(a) __swap_tmp = a;          \
+                a                    = b;          \
+                b                    = __swap_tmp; \
+        } while (0)

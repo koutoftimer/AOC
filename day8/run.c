@@ -1,15 +1,3 @@
-/**
- * Part 2 may have some improvements, according to `perf` over unoptimized
- * build:
- *
- *   * `dfs` takes 75% of time, which means, having "disjoint set union" will
- *   improve performance a lot.
- *
- *   See: https://cp-algorithms.com/data_structures/disjoint_set_union.html
- *
- *   The only difference will be meta information attached to the root that
- *   contains amount of boxes in the circuit.
- */
 #include <assert.h>
 #include <lib.h>
 #include <stdbool.h>
@@ -25,7 +13,6 @@ typedef struct {
 } Pos;
 
 da_define(Pos) boxes = {0};
-long **distances;
 
 long
 distance(Pos a, Pos b)
@@ -39,40 +26,6 @@ typedef struct {
         uint a;
         uint b;
 } Pair;
-
-Pair
-closest(long min_distance)
-{
-        Pair res = {0, 1};
-        for (uint i = 0; i < boxes.size; ++i) {
-                for (uint j = i + 1; j < boxes.size; ++j) {
-                        if (distances[i][j] < distances[res.a][res.b] &&
-                            distances[i][j] > min_distance) {
-                                res = (Pair){i, j};
-                        }
-                }
-        }
-        return res;
-}
-
-// connectivity list
-da_define(uint) *connections = {0};
-
-da_define(uint) visited;
-
-uint
-dfs(uint i)
-{
-        da_foreach(visited, it, {
-                if (*it == i) return 0;
-        });
-        da_append(visited, i);
-        uint res = 1;
-        for (uint j = 0; j < connections[i].size; ++j) {
-                res += dfs(connections[i].items[j]);
-        }
-        return res;
-}
 
 int
 compare_ints(const void *a, const void *b)
@@ -101,6 +54,52 @@ compare_distances(const void *a, const void *b)
         return 0;
 }
 
+// Disjoint Union Sets (DSU) with size optimization is the most suitable version
+// for this task.
+typedef struct {
+        uint *parent;
+        uint *size;
+} DSU;
+
+DSU dsu = {0};
+
+void
+dsu_make_set(uint v)
+{
+        assert(dsu.parent != NULL);
+        assert(dsu.size != NULL);
+
+        dsu.parent[v] = v;
+        dsu.size[v]   = 1;
+}
+
+uint
+dsu_find_set(uint v)
+{
+        assert(dsu.parent != NULL);
+
+        if (dsu.parent[v] == v) {
+                return v;
+        }
+        return dsu.parent[v] = dsu_find_set(dsu.parent[v]);
+}
+
+void
+dsu_union_sets(uint a, uint b)
+{
+        assert(dsu.parent != NULL);
+        assert(dsu.size != NULL);
+
+        a = dsu_find_set(a);
+        b = dsu_find_set(b);
+
+        if (a == b) return;
+
+        if (dsu.size[a] > dsu.size[b]) swap(a, b);
+        dsu.parent[a] = b;
+        dsu.size[b] += dsu.size[a];
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -126,16 +125,17 @@ main(int argc, char *argv[])
         qsort(distances.items, distances.size, sizeof(*distances.items),
               compare_distances);
 
-        connections        = calloc(boxes.size, sizeof(da_define(uint)));
+        dsu.parent = malloc(boxes.size * sizeof(*dsu.parent));
+        dsu.size   = malloc(boxes.size * sizeof(*dsu.size));
+        for (uint i = 0; i < boxes.size; ++i) dsu_make_set(i);
+
         long prev_distance = 0;
         long res;
         for (;;) {
                 Pair c = distances.items[prev_distance++].pair;
-                da_append(connections[c.a], c.b);
-                da_append(connections[c.b], c.a);
-                uint connected_boxes = dfs(c.a);
-                visited.size         = 0;
-                if (connected_boxes != boxes.size) continue;
+                dsu_union_sets(c.a, c.b);
+                uint root = dsu_find_set(c.a);
+                if (dsu.size[root] != boxes.size) continue;
                 res = boxes.items[c.a].x * boxes.items[c.b].x;
                 break;
         }
