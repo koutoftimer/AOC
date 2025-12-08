@@ -9,12 +9,6 @@
  *
  *   The only difference will be meta information attached to the root that
  *   contains amount of boxes in the circuit.
- *
- *   * `closest` takes another 25% of execution time because we are iterrating
- *   entire matrix of distances over and over again. We can calculate all
- *   possble variations, put them into the array, sort it and traverse in O(1)
- *   time and O(Nlog(N)) preprocessing (`qsort` is not O(Nlog(N) in C but.. let
- *   it be). This will be another massive improvement over quadratic O(N^2).
  */
 #include <assert.h>
 #include <lib.h>
@@ -91,6 +85,22 @@ compare_ints(const void *a, const void *b)
         return 0;
 }
 
+typedef struct {
+        long distance;
+        Pair pair;
+} Distance;
+
+int
+compare_distances(const void *a, const void *b)
+{
+        Distance arg1 = *(const Distance *)a;
+        Distance arg2 = *(const Distance *)b;
+
+        if (arg1.distance < arg2.distance) return -1;
+        if (arg1.distance > arg2.distance) return 1;
+        return 0;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -103,21 +113,24 @@ main(int argc, char *argv[])
                 da_append(boxes, pos);
         }
 
-        distances = malloc(sizeof(*distances) * boxes.size);
-        for (ulong i = 0; i < boxes.size; ++i) {
-                distances[i] = malloc(sizeof(**distances) * boxes.size);
-                for (ulong j = i + 1; j < boxes.size; ++j) {
-                        distances[i][j] =
-                            distance(boxes.items[i], boxes.items[j]);
+        da_define(Distance) distances = {0};
+        for (uint i = 0; i < boxes.size; ++i) {
+                for (uint j = i + 1; j < boxes.size; ++j) {
+                        Distance elem = {
+                            distance(boxes.items[i], boxes.items[j]),
+                            (Pair){i, j},
+                        };
+                        da_append(distances, elem);
                 }
         }
+        qsort(distances.items, distances.size, sizeof(*distances.items),
+              compare_distances);
 
         connections        = calloc(boxes.size, sizeof(da_define(uint)));
         long prev_distance = 0;
         long res;
         for (;;) {
-                Pair c        = closest(prev_distance);
-                prev_distance = distances[c.a][c.b];
+                Pair c = distances.items[prev_distance++].pair;
                 da_append(connections[c.a], c.b);
                 da_append(connections[c.b], c.a);
                 uint connected_boxes = dfs(c.a);
