@@ -5,26 +5,13 @@
 #include <string.h>
 
 typedef struct {
-        char **items;
-        size_t capacity;
-        size_t size;
-} Lines;
-
-Lines lines = {0};
-
-typedef struct {
         int x;
         int y;
         long timelines;
 } Entry;
 
-typedef struct {
-        Entry *items;
-        size_t capacity;
-        size_t size;
-} DP;
-
-DP dp = {0};
+da_define(Entry) dp     = {0};
+da_define(char *) lines = {0};
 
 bool
 contains(long y, long x)
