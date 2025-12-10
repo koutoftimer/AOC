@@ -17,4 +17,4 @@ then
   solution="run.c"
 fi
 
-gcc -I.. -I. ${FLAGS[@]} "$solution"
+gcc-15 -I.. -I. ${FLAGS[@]} "$solution"
